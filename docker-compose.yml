@@ -1,0 +1,75 @@
+version: '3.8'
+services:
+  # 実行環境用のSpring App
+  mvnspringtemp:
+    build: 
+      context: ./MavenSpring
+      dockerfile: Dockerfile.prod
+    container_name : mvnspringtemp
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/spring
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - mysqldb
+
+  # 開発環境用のSpring App(ビルド専用)
+  mvnspringdev:
+    build: 
+      context: ./MavenSpring
+      dockerfile: Dockerfile.dev
+    container_name : mvnspringdev
+    volumes:
+      - ./MavenSpring:/app
+      - maven_cache:/root/.m2 # Mavenのキャッシュを永続化
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/spring
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - mysqldb
+    command: ["tail", "-f", "/dev/null"]
+  
+  # DB
+  mysqldb:
+    image: mysql:8.0
+    container_name: mysqldb
+    environment:
+      - MYSQL_DATABASE=spring
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=admin
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # phpMyAdminコンテナ
+  springmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: springmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysqldb
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    links:
+      - mysqldb
+    depends_on:
+      - mysqldb
+    ports:
+     - 3030:80
+    volumes:
+       - /sessions
+
+volumes:
+  db-data:
+  maven_cache: # Mavenのキャッシュ用のボリュームを定義

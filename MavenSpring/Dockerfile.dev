@@ -1,0 +1,8 @@
+# ベースイメージの選択
+FROM openjdk:17-alpine
+
+# apkを使用してMavenのインストール
+RUN apk update && apk add maven
+
+# ワーキングディレクトリを設定
+WORKDIR /app

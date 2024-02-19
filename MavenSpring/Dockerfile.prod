@@ -1,0 +1,8 @@
+# ベースイメージの選択
+FROM openjdk:17
+
+# アプリケーションファイルをコンテナにコピー
+COPY target/*.war app.war
+
+# アプリケーションを実行
+ENTRYPOINT ["java", "-jar", "/app.war"]
